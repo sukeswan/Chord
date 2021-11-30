@@ -62,6 +62,42 @@ class Node{
         return; 
     }
 
+    Node* find_succesor(int id){ // get sucessor of node with id 
+
+        if (this->nodeId == id){ // trival case where n looks up its own sucessor
+            return this->sucessor;
+        }
+
+        Node* prime = this->find_predecessor(id); 
+        return prime->sucessor; 
+    }
+
+    Node* find_predecessor(int id){ // get the predecessor of id using this
+
+        if (this->nodeId == id){ // trival case where n looks up its own predecessor 
+            return this->predecessor;
+        }
+             
+        Node* prime = this;
+        int lower = prime->nodeId;
+        int upper = prime->sucessor->nodeId;
+        while (!((id > lower) && (id<=upper))){
+            prime = prime->sucessor->closest_preceding_finger(id); 
+        }
+        return prime; 
+    }
+
+    Node* closest_preceding_finger(int id){
+
+        for(int i = MBITS; i>0; i--){
+            int currentId = table.nodes[i]->nodeId;
+            if((currentId > nodeId) && (currentId < id)){
+                return table.nodes[i]; 
+            }
+        }
+        return this; 
+    }
+
 	//TODO: implement DHT lookup
 	int find(int key){
         return -1; 
@@ -150,6 +186,26 @@ void test_nodeJoin(){ // test first node joining the chord network
     only.join();
 }
 
+void test_CPF(){ // test closest_preceding_finger function
+    Node test(3); 
+    test.join();
+    Node* check = test.closest_preceding_finger(4);
+    check->printFT();
+}
+
+void test_trivalNeighbors(){ // test find pred and find succ for single node in chord
+    Node test(3); 
+    test.join();
+
+    Node* suck = test.find_succesor(3); 
+    Node* pred = test.find_predecessor(3);
+
+    suck->printFT();
+    pred->printFT();
+
+}
+
 int main(){ 
+    test_trivalNeighbors();
     return 0;
 }
