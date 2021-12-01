@@ -6,15 +6,14 @@
 using namespace std;
 #define MBITS 8
 #define INDEXOFFSET 1                           // 8 values but indexing starts at 1
-#define FINGERTABLESIZE (MBITS + INDEXOFFSET)   // finger tables will 0-8 but 0 will be left empty 
+#define FINGERTABLESIZE (MBITS + INDEXOFFSET)   // finger tables will 0-8 but 0 will be left empty  
 
 class Node; // so compiler doesn't shit itself  
 
 class FingerTable{
     public: 
         int nodeId; // ID of node hosting finger table
-        int intervalEnd[FINGERTABLESIZE]; // end interval values
-        int succ[FINGERTABLESIZE];  // sucessor for start nodes
+        int start[FINGERTABLESIZE];
         Node *nodes[FINGERTABLESIZE]; // for storing pointers to nodes
 
     FingerTable(){
@@ -26,7 +25,7 @@ class FingerTable{
     }
 
     void print(); // print function for fingertable
-    void add(int rowNum, Node* newNode); // to add a value to the finger table 
+    void set(int rowNum, Node* newNode); // to set a value to the finger table 
 };
 
 class Node{
@@ -46,43 +45,49 @@ class Node{
         table = FingerTable(nodeId);
     }
 
-    void join(Node* node){
+    void join(Node* prime){
+        init_finger_table(prime); 
+        update_others();
+        // move keys in (predecessor,n] from successor 
+        printFT(); 
         return; 
     }
 
     void join(){ // this join is for the initial chord node joining the network 
         
         predecessor = this; // node point to itself 
-        sucessor = this; 
+        
 
         for(int i = 1; i < FINGERTABLESIZE; i++){
-            table.add(i,this);
+            table.set(i,this);
+    
         }
+        sucessor = table.nodes[1]; 
         printFT(); 
         return; 
     }
 
     Node* find_succesor(int id){ // get sucessor of node with id 
 
-        if (this->nodeId == id){ // trival case where n looks up its own sucessor
-            return this->sucessor;
-        }
-
         Node* prime = this->find_predecessor(id); 
         return prime->sucessor; 
     }
 
     Node* find_predecessor(int id){ // get the predecessor of id using this
-
-        if (this->nodeId == id){ // trival case where n looks up its own predecessor 
-            return this->predecessor;
-        }
              
         Node* prime = this;
         int lower = prime->nodeId;
         int upper = prime->sucessor->nodeId;
-        while (!((id > lower) && (id<=upper))){
-            prime = prime->sucessor->closest_preceding_finger(id); 
+        //cout << "LOWER ID UPPER: "<< lower << " " << id << " " << upper << endl;
+        if (lower >= upper){
+            //cout << "lower > upper" << endl; 
+            return prime; 
+        }
+
+        //cout << "NOT" << endl; 
+        while (id <= lower || id > upper){
+            prime = prime->closest_preceding_finger(id);
+            
         }
         return prime; 
     }
@@ -96,6 +101,49 @@ class Node{
             }
         }
         return this; 
+    }
+
+    void init_finger_table(Node* prime){
+        int succID  = table.start[1]; 
+        Node* succ = prime->find_succesor(succID); 
+        table.set(1,succ);
+        sucessor = succ; 
+
+        predecessor = sucessor->predecessor; 
+        sucessor->predecessor = this;
+
+        for(int i = 1; i < MBITS; i++){
+            int currentId = table.start[i+1]; 
+            if(currentId >= this->nodeId  && currentId < table.nodes[i]->nodeId){
+                table.set(i+1,table.nodes[i]);
+            }
+            else{
+                table.set(i+1,prime->find_succesor(currentId));
+            }
+        }
+
+        return; 
+    }
+
+    void update_others(){
+        for(int i = 1; i < FINGERTABLESIZE; i++){
+            int sub = pow(2,i-1); 
+            Node* p = find_predecessor(nodeId - sub);
+            p->update_finger_table(this,i);  
+        }
+        return; 
+    }
+
+    void update_finger_table(Node* s, int i){
+        if(s->nodeId >= nodeId && s->nodeId < table.nodes[i]->nodeId){
+            table.set(i,s);
+            if(i==1){
+                sucessor = s; 
+            }
+            Node* p = predecessor; 
+            p->update_finger_table(s,i); 
+        }
+        return;
     }
 
 	//TODO: implement DHT lookup
@@ -137,16 +185,20 @@ class Node{
 
 void FingerTable::print(){
     for(int i = 1; i < FINGERTABLESIZE; i++){
-        cout << "| k = " << i << " [" << nodes[i]->nodeId << ", " << intervalEnd[i] << ")   " << "succ. = " << succ[i] << " |" << endl;
+        int dist = pow(2, i-1);
+        int div = pow(2, MBITS);
+        int intervalEnd = (start[i] + dist) % div;
+        int succ = nodes[i]->sucessor->nodeId;
+        cout << "| k = " << i << " [" << start[i] << ", " << intervalEnd << ")   " << "succ. = " << succ << " |" << endl;
     }
 }
 
-void FingerTable::add(int rowNum, Node* newNode){ // table.add(1,&node)
+void FingerTable::set(int rowNum, Node* newNode){ // table.set(1,&node)
     nodes[rowNum] = newNode; 
-    succ[rowNum] = newNode->sucessor->nodeId; 
     int dist = pow(2, rowNum-1);
     int div = pow(2, MBITS);
-    intervalEnd[rowNum] = (newNode->nodeId + dist) % div; // calculate end interval for node
+    start[rowNum] = (nodeId + dist) % div; // calculate end interval for node
+    
 }
 
 void test_fingerTablePrint(){ // test creating FingerTable and printing it 
@@ -158,7 +210,7 @@ void test_fingerTablePrint(){ // test creating FingerTable and printing it
     FingerTable test(0); 
    
     for(int i = 1; i < FINGERTABLESIZE; i++){
-        test.add(i,&one); 
+        test.set(i,&one); 
     }
 
     test.print();
@@ -171,7 +223,7 @@ void test_nodePrints(){ // test both node print functions
     Node next(501);
     check.sucessor = &next; 
     for(int i = 1; i < FINGERTABLESIZE; i++){
-        testNode.table.add(i,&check); 
+        testNode.table.set(i,&check); 
         testNode.key_vals.insert(pair<int, int>(i, i*i));
 
     } 
@@ -205,7 +257,35 @@ void test_trivalNeighbors(){ // test find pred and find succ for single node in 
 
 }
 
+void test_initFT(){ //test init_finger_table() fx
+    Node three(3); 
+    Node four(4); 
+    three.join();
+
+    four.init_finger_table(&three); 
+    four.printFT();
+}
+
+void test_join(){
+    Node n0(0);
+    Node n1(30);
+    Node n2(65); 
+    Node n3(110);
+    Node n4(160);
+    Node n5(230); 
+
+    n0.join();
+    n1.join(&n0);
+    n2.join(&n1);
+    n3.join(&n2);
+    n4.join(&n3);
+    n5.join(&n4);
+
+    n0.printFT(); 
+
+}
+
 int main(){ 
-    test_trivalNeighbors();
+    test_join();
     return 0;
 }
