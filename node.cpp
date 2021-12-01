@@ -67,7 +67,7 @@ class Node{
         return; 
     }
 
-    Node* find_succesor(int id){ // get successor of node with id 
+    Node* find_successor(int id){ // get successor of node with id 
 
         Node* prime = find_predecessor(id); 
         return prime->successor; 
@@ -105,7 +105,7 @@ class Node{
 
     void init_finger_table(Node* prime){
         int succID  = table.start[1]; 
-        Node* succ = prime->find_succesor(succID); 
+        Node* succ = prime->find_successor(succID); 
         table.set(1,succ);
         successor = table.nodes[1]; 
 
@@ -118,7 +118,7 @@ class Node{
                 table.set(i+1,table.nodes[i]);
             }
             else{
-                table.set(i+1,prime->find_succesor(currentId));
+                table.set(i+1,prime->find_successor(currentId));
             }
         }
 
@@ -249,7 +249,7 @@ void test_trivalNeighbors(){ // test find pred and find succ for single node in 
     Node test(3); 
     test.join();
 
-    Node* suck = test.find_succesor(3); 
+    Node* suck = test.find_successor(3); 
     Node* pred = test.find_predecessor(3);
 
     suck->printFT();
