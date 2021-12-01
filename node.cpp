@@ -32,7 +32,7 @@ class Node{
     public: 
         int nodeId; 
         FingerTable table;
-        Node* sucessor; // pointer to sucessor node
+        Node* successor; // pointer to successor node
         Node* predecessor; // pointer to predecessor node
         map<int, int> key_vals; // map to store the keys and values at this node
 
@@ -62,22 +62,22 @@ class Node{
             table.set(i,this);
     
         }
-        sucessor = table.nodes[1]; 
+        successor = table.nodes[1]; 
         printFT(); 
         return; 
     }
 
-    Node* find_succesor(int id){ // get sucessor of node with id 
+    Node* find_succesor(int id){ // get successor of node with id 
 
-        Node* prime = this->find_predecessor(id); 
-        return prime->sucessor; 
+        Node* prime = find_predecessor(id); 
+        return prime->successor; 
     }
 
     Node* find_predecessor(int id){ // get the predecessor of id using this
              
         Node* prime = this;
         int lower = prime->nodeId;
-        int upper = prime->sucessor->nodeId;
+        int upper = prime->successor->nodeId;
         //cout << "LOWER ID UPPER: "<< lower << " " << id << " " << upper << endl;
         if (lower >= upper){
             //cout << "lower > upper" << endl; 
@@ -107,10 +107,10 @@ class Node{
         int succID  = table.start[1]; 
         Node* succ = prime->find_succesor(succID); 
         table.set(1,succ);
-        sucessor = succ; 
+        successor = table.nodes[1]; 
 
-        predecessor = sucessor->predecessor; 
-        sucessor->predecessor = this;
+        predecessor = successor->predecessor; 
+        successor->predecessor = this;
 
         for(int i = 1; i < MBITS; i++){
             int currentId = table.start[i+1]; 
@@ -138,7 +138,7 @@ class Node{
         if(s->nodeId >= nodeId && s->nodeId < table.nodes[i]->nodeId){
             table.set(i,s);
             if(i==1){
-                sucessor = s; 
+                successor = s; 
             }
             Node* p = predecessor; 
             p->update_finger_table(s,i); 
@@ -163,7 +163,7 @@ class Node{
 
     void printFT(){ // prints nodes id, succ, pred, and fingertable
         cout << "---------- Node ID: " << nodeId << " ----------" << endl; 
-        cout << "Sucessor: " << sucessor->nodeId << "\nPredecessor: " << predecessor->nodeId << "\n" << endl; 
+        cout << "Sucessor: " << successor->nodeId << "\nPredecessor: " << predecessor->nodeId << "\n" << endl; 
         table.print(); 
         cout << "-------------------------------\n*******************************" << endl;  
         return; 
@@ -188,7 +188,7 @@ void FingerTable::print(){
         int dist = pow(2, i-1);
         int div = pow(2, MBITS);
         int intervalEnd = (start[i] + dist) % div;
-        int succ = nodes[i]->sucessor->nodeId;
+        int succ = nodes[i]->successor->nodeId;
         cout << "| k = " << i << " [" << start[i] << ", " << intervalEnd << ")   " << "succ. = " << succ << " |" << endl;
     }
 }
@@ -205,7 +205,7 @@ void test_fingerTablePrint(){ // test creating FingerTable and printing it
     
     Node one(1); 
     Node two(2);
-    one.sucessor = &two; 
+    one.successor = &two; 
     
     FingerTable test(0); 
    
@@ -221,7 +221,7 @@ void test_nodePrints(){ // test both node print functions
     Node testNode(8); 
     Node check(500); 
     Node next(501);
-    check.sucessor = &next; 
+    check.successor = &next; 
     for(int i = 1; i < FINGERTABLESIZE; i++){
         testNode.table.set(i,&check); 
         testNode.key_vals.insert(pair<int, int>(i, i*i));
