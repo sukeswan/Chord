@@ -14,7 +14,7 @@ class FingerTable{
     public: 
         int nodeId; // ID of node hosting finger table
         int start[FINGERTABLESIZE];
-        Node *nodes[FINGERTABLESIZE]; // for storing pointers to nodes
+        Node *succNodes[FINGERTABLESIZE]; // for storing pointers to succNodes
 
     FingerTable(){
         nodeId = -1; // default constructor for Node class
@@ -22,6 +22,11 @@ class FingerTable{
 
     FingerTable(int aNodeID){ // constructor with node ID 
         nodeId = aNodeID; 
+        int circlesize = pow(2, MBITS);
+        for (int i = 1; i < FINGERTABLESIZE; i ++){
+            int dist = pow(2, i-1);
+            start[i] = (nodeId + dist) % circlesize; // calculate end interval for node
+        }
     }
 
     void print(); // print function for fingertable
@@ -47,6 +52,7 @@ class Node{
 
     void join(Node* prime){
         init_finger_table(prime); 
+        //return; // this is for testing only 
         update_others();
         // move keys in (predecessor,n] from successor 
         printFT(); 
@@ -62,13 +68,12 @@ class Node{
             table.set(i,this);
     
         }
-        successor = table.nodes[1]; 
+        successor = this; 
         printFT(); 
         return; 
     }
 
     Node* find_successor(int id){ // get successor of node with id 
-
         Node* prime = find_predecessor(id); 
         return prime->successor; 
     }
@@ -95,9 +100,9 @@ class Node{
     Node* closest_preceding_finger(int id){
 
         for(int i = MBITS; i>0; i--){
-            int currentId = table.nodes[i]->nodeId;
+            int currentId = table.succNodes[i]->nodeId;
             if((currentId > nodeId) && (currentId < id)){
-                return table.nodes[i]; 
+                return table.succNodes[i]; 
             }
         }
         return this; 
@@ -105,19 +110,38 @@ class Node{
 
     void init_finger_table(Node* prime){
         int succID  = table.start[1]; 
+        cout << "succID " << succID << endl; 
         Node* succ = prime->find_successor(succID); 
+        cout << succ->nodeId << endl; 
         table.set(1,succ);
-        successor = table.nodes[1]; 
+        successor = table.succNodes[1]; 
 
         predecessor = successor->predecessor; 
         successor->predecessor = this;
+        cout<< "pred " << predecessor->nodeId << endl; 
+        cout<< "succpred " << successor->predecessor->nodeId << endl; 
 
         for(int i = 1; i < MBITS; i++){
             int currentId = table.start[i+1]; 
-            if(currentId >= this->nodeId  && currentId < table.nodes[i]->nodeId){
-                table.set(i+1,table.nodes[i]);
+            cout << "251 node" << table.succNodes[i]->nodeId << endl; 
+            int* set = set_build(this->nodeId , table.succNodes[i]->nodeId, 1, 1);
+            bool set_check = false;
+            while (set != NULL) {
+                cout<< "while" << endl;
+                if ((*set) == currentId){
+                    // table.set(i+1,table.succNodes[i]);
+                    set_check = true;
+                } 
+                set++;
+            }
+            if(set_check){ //&& currentId < table.succNodes[i]->nodeId
+                table.set(i+1,table.succNodes[i]);
+                cout<< "if"<<i<<" "<< table.succNodes[i]->nodeId<<endl;
+
             }
             else{
+                //prime->find_successor(currentId)->table.succNodes[1]
+                cout<< "else"<<i<<" "<< prime->find_successor(currentId)->nodeId<<endl;
                 table.set(i+1,prime->find_successor(currentId));
             }
         }
@@ -135,7 +159,7 @@ class Node{
     }
 
     void update_finger_table(Node* s, int i){
-        if(s->nodeId >= nodeId && s->nodeId < table.nodes[i]->nodeId){
+        if(s->nodeId >= nodeId && s->nodeId < table.succNodes[i]->nodeId){
             table.set(i,s);
             if(i==1){
                 successor = s; 
@@ -145,6 +169,57 @@ class Node{
         }
         return;
     }
+    int* inclusion(int* set, int left, int right){
+        if (left == 1 && right ==1){
+            return set;
+        }
+        else if (left == 0 && right ==0){
+            set[0] = -1;
+            set[(sizeof(set)/sizeof(*set))-1] = -1;
+            return set;
+        }
+        else{
+            return set;
+        }
+    }
+    int* set_build(int lower, int upper, int left, int right){
+        // left right exclusive 0 / inclusive 1
+        // int* finalset;
+        if (lower == upper){
+            int finalset[1] = {lower};
+            return finalset;  
+
+        }
+        else if (lower < upper){
+            int range = upper-lower+1;
+            int finalset[range];
+
+            for(int i = 0; i < range; i ++){
+                finalset[i] = i + lower; 
+            } 
+            return inclusion(finalset, left,right);
+        }
+
+        else {   //if (lower > upper)
+            int range = upper + 256 - lower + 1;
+            int finalset[range];
+            for (int i = 0; i < range; i++){
+                finalset[i] = (lower + i) % 256;
+            } 
+               return inclusion(finalset, left,right);
+
+        }
+        // //inclusion exclusion
+        // if (left == 1 and right == 1){
+        //     return finalset;
+        // }
+        // else if (left == 0 and right == 1){
+        //     return finalset[];
+        // }()
+
+    }
+
+    
 
 	//TODO: implement DHT lookup
 	int find(int key){
@@ -161,7 +236,7 @@ class Node{
         return; 
     }
 
-    void printFT(){ // prints nodes id, succ, pred, and fingertable
+    void printFT(){ // prints succNodes id, succ, pred, and fingertable
         cout << "---------- Node ID: " << nodeId << " ----------" << endl; 
         cout << "Sucessor: " << successor->nodeId << "\nPredecessor: " << predecessor->nodeId << "\n" << endl; 
         table.print(); 
@@ -188,31 +263,29 @@ void FingerTable::print(){
         int dist = pow(2, i-1);
         int div = pow(2, MBITS);
         int intervalEnd = (start[i] + dist) % div;
-        int succ = nodes[i]->successor->nodeId;
+        int succ = succNodes[i]->nodeId;
         cout << "| k = " << i << " [" << start[i] << ", " << intervalEnd << ")   " << "succ. = " << succ << " |" << endl;
     }
+
 }
 
 void FingerTable::set(int rowNum, Node* newNode){ // table.set(1,&node)
-    nodes[rowNum] = newNode; 
-    int dist = pow(2, rowNum-1);
-    int div = pow(2, MBITS);
-    start[rowNum] = (nodeId + dist) % div; // calculate end interval for node
-    
+
+    succNodes[rowNum] = newNode; 
 }
 
 void test_fingerTablePrint(){ // test creating FingerTable and printing it 
     
-    Node one(1); 
-    Node two(2);
-    one.successor = &two; 
+    Node* one = new Node(1); 
+    Node* two = new Node(2);
+    (*one).successor = two; 
     
     FingerTable test(0); 
    
-    for(int i = 1; i < FINGERTABLESIZE; i++){
-        test.set(i,&one); 
+    for(int i = 1; i < 8; i++){
+        test.set(i,one); 
     }
-
+    test.set(8,two); 
     test.print();
 }
 
@@ -268,7 +341,7 @@ void test_initFT(){ //test init_finger_table() fx
 
 void test_join(){
     Node n0(0);
-    Node n1(30);
+    Node n1(250);
     Node n2(65); 
     Node n3(110);
     Node n4(160);
@@ -276,16 +349,19 @@ void test_join(){
 
     n0.join();
     n1.join(&n0);
-    n2.join(&n1);
-    n3.join(&n2);
-    n4.join(&n3);
-    n5.join(&n4);
+    n0.printFT();
+    n1.printFT(); 
+    // n2.join(&n1);
+    // n3.join(&n2);
+    // n4.join(&n3);
+    // n5.join(&n4);
 
-    n0.printFT(); 
+    //n0.printFT(); 
 
 }
 
-int main(){ 
+int main(){
+    //test_fingerTablePrint(); 
     test_join();
     return 0;
 }
