@@ -51,8 +51,9 @@ class Node{
 
     void join(Node* prime){
         init_finger_table(prime); 
-        //return; // this is for testing only 
-        update_others();
+        printFT();
+        return; // this is for testing only 
+        //update_others();
         // move keys in (predecessor,n] from successor 
         printFT(); 
         return; 
@@ -73,8 +74,13 @@ class Node{
     }
 
     Node* find_successor(int id){ // get successor of node with id 
+        cout << "node id " <<nodeId << " successor "<< successor->nodeId << " check ID " << id << endl; 
+        if(nodeId == successor->nodeId){ // if this is only node, return it
+            return this; 
+        }
+
         Node* prime = find_predecessor(id); 
-        //cout << "prime" << prime->nodeId << "primesucc" << prime->successor->nodeId << endl; 
+        cout << "prime " << prime->nodeId << "primesucc " << prime->successor->nodeId << endl; 
         return prime->successor; 
     }
 
@@ -82,13 +88,12 @@ class Node{
              
         Node* prime = this;
         int lower = prime->nodeId;
-        int upper = prime->table.succNodes[1]->nodeId;
+        int upper = prime->successor->nodeId;
         //cout<< "lower " << lower << " id " << id << " upper " << upper << endl; 
         if (lower>=upper){
             return prime; 
         }
-
-        
+        cout << "while" << endl; 
         while (!set_check(id,lower,upper,0,1)){
             prime = prime->closest_preceding_finger(id);
         }
@@ -119,6 +124,8 @@ class Node{
 
         predecessor = successor->predecessor; 
         successor->predecessor = this;
+        predecessor->successor = this; 
+        predecessor->table.succNodes[1] = this; 
         //cout<< "pred " << predecessor->nodeId << endl; 
         //cout<< "succpred " << successor->predecessor->nodeId << endl; 
 
@@ -130,12 +137,11 @@ class Node{
 
             if(in_range){ 
                 table.succNodes[i+1] = table.succNodes[i];
-                //cout<< "if "<<i<<" "<< table.succNodes[i]->nodeId<<endl;
+                cout<< "if "<<i<<" "<< table.succNodes[i]->nodeId<<endl;
 
             }
             else{
-                //prime->find_successor(currentId)->table.succNodes[1]
-                //cout<< "else "<<i<<" "<< prime->find_successor(currentId)->nodeId<<endl;
+                cout<< "else "<<i<<" "<< prime->find_successor(currentId)->nodeId<<endl;
                 table.succNodes[i+1] = prime->find_successor(currentId);
 
             }
@@ -159,9 +165,6 @@ class Node{
 
         if(in_range){
             table.succNodes[i] = s; 
-            if(i==1){
-                successor = s; 
-            }
             Node* p = predecessor; 
             p->update_finger_table(s,i); 
         }
@@ -183,6 +186,7 @@ class Node{
 	void remove(int key){
         return; 
     }
+
     static bool set_check(int target, int lower, int upper, int left, int right){
         // left right exclusive 0 / inclusive 1
         if (lower == upper){
@@ -267,7 +271,6 @@ void FingerTable::print(){
 
 }
 
-
 void test_fingerTablePrint(){ // test creating FingerTable and printing it 
     
     Node* one = new Node(1); 
@@ -343,19 +346,27 @@ void test_join(){
 
     n0.join();
     n1.join(&n0);
-    // n0.printFT();
-    // n1.printFT(); 
-    //n2.join(&n1);
-    // n3.join(&n2);
-    // n4.join(&n3);
-    // n5.join(&n4);
-
-    //n0.printFT(); 
-
+    n2.join(&n1);
+    n3.join(&n2);
+    n4.join(&n3);
+    n5.join(&n4);
 }
 
 int main(){
-    //test_fingerTablePrint(); 
-    test_join();
+    Node n0(0);
+    Node n1(30);
+    Node n2(65);
+
+    n0.join();
+    n1.join(&n0);
+    
+    n2.join(&n1);
+
+    cout << "____________________FINAL ____________________" << endl; 
+
+    n0.printFT();
+    n1.printFT(); 
+    n2.printFT();
+
     return 0;
 }
