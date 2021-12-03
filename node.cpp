@@ -7,6 +7,7 @@ using namespace std;
 #define MBITS 8
 #define INDEXOFFSET 1                           // 8 values but indexing starts at 1
 #define FINGERTABLESIZE (MBITS + INDEXOFFSET)   // finger tables will 0-8 but 0 will be left empty  
+#define None -1
 
 class Node; // so compiler doesn't shit itself  
 
@@ -65,13 +66,17 @@ class Node{
     void join(Node* prime){
         init_finger_table(prime); 
         update_others(nodeId);
-
+        migrate_keys();
         // move keys in (predecessor,n] from successor 
         //printFT(); 
         return; 
     }
 
     Node* find_successor(int id){ // get successor of node with id 
+
+        if(nodeId == id){ // joining node will never ask for its own Succesor
+            return this; // this case is used for insert 
+        }
 
         Node* prime = find_predecessor(id); 
         return prime->successor; 
@@ -87,13 +92,14 @@ class Node{
             //cout << "same" << endl; 
             return prime; 
         }
-        
+
         while (!set_check(id,lower,upper,0,1)){
             //cout << "while" << endl; 
             prime = prime->closest_preceding_finger(id);
             lower = prime->nodeId;
             upper = prime->successor->nodeId;
         }
+
         //cout << "node " << nodeId << " id " << id << " prime " << prime->nodeId << endl; 
         return prime; 
     }
@@ -199,6 +205,48 @@ class Node{
         return false; 
     }
 
+    //TODO: implement DHT lookup
+	int find(int key){
+        return -1; 
+    }
+
+    void migrate_keys(){
+        map<int, int>::iterator itr;
+
+        if(successor->key_vals.empty()){
+            return; 
+        }
+         
+        for (itr = successor->key_vals.begin(); itr != successor->key_vals.end(); ++itr) {
+
+            bool in_range = set_check(itr->first, predecessor->nodeId, nodeId, 0,1); 
+            if(in_range){
+                key_vals.insert(pair<int, int>(itr->first, itr->second));
+                cout << "Migrate key " << itr->first << " from node " << successor->nodeId << " to node " << nodeId << endl;
+            }
+        }
+
+        for( int i = predecessor->nodeId + 1; i <=nodeId; i++){
+            successor->key_vals.erase(i); 
+        }
+
+        return; 
+
+
+    }
+
+	void insert(int key, int value){
+        Node* next = find_successor(key); 
+        next->key_vals.insert(pair<int, int>(key, value));
+        return; 
+    }
+
+	void remove(int key){
+        Node* next = find_successor(key); 
+        next->key_vals.erase(key); 
+        return; 
+    }
+
     void printFT(){ // prints succNodes id, succ, pred, and fingertable
         cout << "---------- Node ID: " << nodeId << " ----------" << endl; 
         cout << "Sucessor: " << successor->nodeId << "\nPredecessor: " << predecessor->nodeId << "\n" << endl; 
@@ -213,7 +261,13 @@ class Node{
         cout << "{ "; 
         map<int, int>::iterator itr;
         for (itr = key_vals.begin(); itr != key_vals.end(); ++itr) {
-            cout << "(" << itr->first << ": " << itr->second << ") "; 
+            if (itr->second == None){
+                cout << "(" << itr->first << ": " << "None" << ") "; 
+            }
+            else{
+                cout << "(" << itr->first << ": " << itr->second << ") "; 
+            }
+            
         }
         cout << "}" << endl; 
         return; 
@@ -232,8 +286,7 @@ void FingerTable::print(){
 
 }
 
-int main(){
-
+void test_join(){
     Node n0(0);
     Node n1(30);
     Node n2(65); 
@@ -254,6 +307,28 @@ int main(){
     n3.printFT();
     n4.printFT();
     n5.printFT();
+}
+
+int main(){
+
+    Node n0(0);
+    Node n1(100);
+    Node n2(50); 
+
+    n0.join();
+    n1.join(&n0);
+
+    n1.insert(31,None);
+    n1.insert(32,None);
+    n1.insert(33,None);
+    n1.insert(49,None);
+    n1.insert(50,None);
+
+    n2.join(&n1); 
+
+    n0.printMap();
+    n1.printMap();
+    n2.printMap();
 
     return 0;
 }
