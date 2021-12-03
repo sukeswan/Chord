@@ -48,39 +48,31 @@ class Node{
         nodeId = id; 
         table = FingerTable(nodeId);
     }
-
-    void join(Node* prime){
-        init_finger_table(prime); 
-        printFT();
-        //return; // this is for testing only 
-        update_others();
-        // move keys in (predecessor,n] from successor 
-        printFT(); 
-        return; 
-    }
-
     void join(){ // this join is for the initial chord node joining the network 
         
         predecessor = this; // node point to itself 
-        
+        successor = this;
 
         for(int i = 1; i < FINGERTABLESIZE; i++){
             table.succNodes[i] = this;
-    
         }
-        successor = table.succNodes[1]; 
-        printFT(); 
+         
+        //printFT(); 
+        return; 
+    }
+
+    void join(Node* prime){
+        init_finger_table(prime); 
+        update_others(nodeId);
+
+        // move keys in (predecessor,n] from successor 
+        //printFT(); 
         return; 
     }
 
     Node* find_successor(int id){ // get successor of node with id 
-        cout << "node id " <<nodeId << " successor "<< successor->nodeId << " check ID " << id << endl; 
-        if(nodeId == successor->nodeId){ // if this is only node, return it
-            return this; 
-        }
 
         Node* prime = find_predecessor(id); 
-        cout << "prime " << prime->nodeId << " primesucc " << prime->successor->nodeId << endl; 
         return prime->successor; 
     }
 
@@ -89,15 +81,19 @@ class Node{
         Node* prime = this;
         int lower = prime->nodeId;
         int upper = prime->successor->nodeId;
-        //cout<< "lower " << lower << " id " << id << " upper " << upper << endl; 
-        if (lower>=upper){
+
+        if (lower==upper){
+            //cout << "same" << endl; 
             return prime; 
         }
-        cout << "while" << endl; 
-        while (!set_check(id,lower,upper,1,1)){
+        
+        while (!set_check(id,lower,upper,0,1)){
+            //cout << "while" << endl; 
             prime = prime->closest_preceding_finger(id);
+            lower = prime->nodeId;
+            upper = prime->successor->nodeId;
         }
-        //cout << "HOLA" << endl;
+        //cout << "node " << nodeId << " id " << id << " prime " << prime->nodeId << endl; 
         return prime; 
     }
 
@@ -105,86 +101,51 @@ class Node{
 
         for(int i = MBITS; i>0; i--){
             int currentId = table.succNodes[i]->nodeId;
-            bool in_range = set_check(currentId,nodeId, id, 1,1); 
+            bool in_range = set_check(currentId,nodeId, id, 0,0); 
             if(in_range){
                 return table.succNodes[i]; 
             }
-        }
-        //cout << "returning id " << this->nodeId << endl; 
+        } 
         return this; 
     }
 
     void init_finger_table(Node* prime){
-        int succID  = table.start[1]; 
-        //cout << "succID " << succID << endl; 
-        Node* succ = prime->find_successor(succID); 
-        //cout << succ->nodeId << endl; 
-        table.succNodes[1] = succ;
-        successor = table.succNodes[1]; 
+        int succID  = table.start[1]; // this and this+1 will have same successor
+        table.succNodes[1] = prime->find_successor(succID); // ask prime to find successor of next value
+        successor = table.succNodes[1]; // set 
 
-        predecessor = successor->predecessor; 
+        predecessor = successor->predecessor; //
         successor->predecessor = this;
         predecessor->successor = this; 
-        predecessor->table.succNodes[1] = this; 
-        //cout<< "pred " << predecessor->nodeId << endl; 
-        //cout<< "succpred " << successor->predecessor->nodeId << endl; 
-        cout << "init" << endl; 
-        for(int i = 1; i < MBITS; i++){
-            int currentId = table.start[i+1]; 
-            //cout << "currentId " << currentId << endl; 
-            cout<< "currentID " << currentId << " nodeId " << nodeId << " table.succNodes[i]->nodeId " << table.succNodes[i]->nodeId<< endl; 
-            bool in_range = set_check(currentId, nodeId, table.succNodes[i]->nodeId, 1,0);
 
-            if(in_range){ 
-                table.succNodes[i+1] = table.succNodes[i];
-                cout<< "if "<<i<<" "<< table.succNodes[i]->nodeId<<endl;
-
+        //cout << this->nodeId << " has predecessor " << predecessor->nodeId << endl; 
+        //cout << this->nodeId << " has successor " << successor->nodeId << endl; 
+        for(int row = 2; row < FINGERTABLESIZE; row++){
+            if(set_check(table.start[row],nodeId,successor->nodeId,0,1)){
+                table.succNodes[row] = successor; 
             }
             else{
-                cout<< "else "<<i<<" "<< prime->find_successor(currentId)->nodeId<<endl;
-                table.succNodes[i+1] = prime->find_successor(currentId);
-
+                //cout << row << endl; 
+                table.succNodes[row] = prime->find_successor(table.start[row]); 
             }
+            
         }
 
         return; 
     }
 
-    void update_others(){
-        for(int i = 1; i < FINGERTABLESIZE; i++){
-            int sub = pow(2,i-1); 
-            Node* p = find_predecessor(nodeId - sub);
-            p->update_finger_table(this,i);  
+    void update_others(int origin){
+        Node* current = predecessor; 
+
+        if (current->nodeId == origin){
+            return;
         }
-        return; 
-    }
-
-    void update_finger_table(Node* s, int i){
-
-        bool in_range = set_check(s->nodeId,nodeId,table.succNodes[i]->nodeId,1,0); 
-
-        if(in_range){
-            table.succNodes[i] = s;
-            Node* p = predecessor; 
-            p->update_finger_table(s,i); 
+        else{
+            for(int row = 1; row < FINGERTABLESIZE; row++){
+                current->table.succNodes[row] = find_successor(current->table.start[row]);
+            }
+        (*current).update_others(origin); 
         }
-        return;
-    }
-    
-
-	//TODO: implement DHT lookup
-	int find(int key){
-        return -1; 
-    }
-
-	//TODO: implement DHT key insertion
-	void insert(int key){
-        return; 
-    }
-
-	//TODO: implement DHT key deletion
-	void remove(int key){
-        return; 
     }
 
     static bool set_check(int target, int lower, int upper, int left, int right){
@@ -271,72 +232,8 @@ void FingerTable::print(){
 
 }
 
-void test_fingerTablePrint(){ // test creating FingerTable and printing it 
-    
-    Node* one = new Node(1); 
-    Node* two = new Node(2);
-    (*one).successor = two; 
-    
-    FingerTable test(0); 
-   
-    for(int i = 1; i < 8; i++){
-        test.succNodes[i] = one; 
-    }
-    test.succNodes[8] = two;
-    test.print();
-}
+int main(){
 
-void test_nodePrints(){ // test both node print functions
-    
-    Node testNode(8); 
-    Node check(500); 
-    Node next(501);
-    check.successor = &next; 
-    for(int i = 1; i < FINGERTABLESIZE; i++){
-        testNode.table.succNodes[i] = &check;
-        testNode.key_vals.insert(pair<int, int>(i, i*i));
-
-    } 
-    //testNode.key_vals.insert(pair<int, int>(50, NULL));
-    testNode.printFT(); 
-    testNode.printMap(); 
-
-}
-
-void test_nodeJoin(){ // test first node joining the chord network 
-    Node only(3); 
-    only.join();
-}
-
-void test_CPF(){ // test closest_preceding_finger function
-    Node test(3); 
-    test.join();
-    Node* check = test.closest_preceding_finger(4);
-    check->printFT();
-}
-
-void test_trivalNeighbors(){ // test find pred and find succ for single node in chord
-    Node test(3); 
-    test.join();
-
-    Node* suck = test.find_successor(3); 
-    Node* pred = test.find_predecessor(3);
-
-    suck->printFT();
-    pred->printFT();
-
-}
-
-void test_initFT(){ //test init_finger_table() fx
-    Node three(3); 
-    Node four(4); 
-    three.join();
-
-    four.init_finger_table(&three); 
-    four.printFT();
-}
-
-void test_join(){
     Node n0(0);
     Node n1(30);
     Node n2(65); 
@@ -350,23 +247,13 @@ void test_join(){
     n3.join(&n2);
     n4.join(&n3);
     n5.join(&n4);
-}
-
-int main(){
-    Node n0(0);
-    Node n1(250);
-    Node n2(60);
-
-    n0.join();
-    n1.join(&n0);
-    
-    //n2.join(&n1);
-
-    cout << "____________________FINAL ____________________" << endl; 
 
     n0.printFT();
-    n1.printFT(); 
-    //n2.printFT();
+    n1.printFT();
+    n2.printFT();
+    n3.printFT();
+    n4.printFT();
+    n5.printFT();
 
     return 0;
 }
