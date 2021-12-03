@@ -64,12 +64,18 @@ class Node{
     }
 
     void join(Node* prime){
-        init_finger_table(prime); 
-        update_others(nodeId);
-        migrate_keys();
-        // move keys in (predecessor,n] from successor 
-        //printFT(); 
+        init_finger_table(prime); //initialize finger table
+        update_others(nodeId); // update other nodes
+        migrate_keys(); // migrate keys from successor
         return; 
+    }
+
+    void leave(){
+        predecessor->successor = successor; // remove pointers to this node
+        successor->predecessor = predecessor; 
+
+        successor->update_others(successor->nodeId); // update finger tables of network
+        leave_migrate_keys(); // move key value pairs to successor
     }
 
     Node* find_successor(int id){ // get successor of node with id 
@@ -89,18 +95,15 @@ class Node{
         int upper = prime->successor->nodeId;
 
         if (lower==upper){
-            //cout << "same" << endl; 
             return prime; 
         }
 
         while (!set_check(id,lower,upper,0,1)){
-            //cout << "while" << endl; 
             prime = prime->closest_preceding_finger(id);
             lower = prime->nodeId;
             upper = prime->successor->nodeId;
         }
 
-        //cout << "node " << nodeId << " id " << id << " prime " << prime->nodeId << endl; 
         return prime; 
     }
 
@@ -119,19 +122,19 @@ class Node{
     void init_finger_table(Node* prime){
         int succID  = table.start[1]; // this and this+1 will have same successor
         table.succNodes[1] = prime->find_successor(succID); // ask prime to find successor of next value
-        successor = table.succNodes[1]; // set 
+        successor = table.succNodes[1]; // set
 
-        predecessor = successor->predecessor; //
+        predecessor = successor->predecessor; // fix pointers to point to this node
         successor->predecessor = this;
         predecessor->successor = this; 
 
         for(int row = 2; row < FINGERTABLESIZE; row++){
-            if(set_check(table.start[row],nodeId,successor->nodeId,0,1)){
+            if(set_check(table.start[row],nodeId,successor->nodeId,0,1)){ // case: finger has same successor as node
                 table.succNodes[row] = successor; 
             }
             else{
                 //cout << row << endl; 
-                table.succNodes[row] = prime->find_successor(table.start[row]); 
+                table.succNodes[row] = prime->find_successor(table.start[row]); // case2: finger has different successor
             }
             
         }
@@ -139,7 +142,7 @@ class Node{
         return; 
     }
 
-    void update_others(int origin){
+    void update_others(int origin){ // update other nodes of newly joined or removed node. 
         Node* current = predecessor; 
 
         if (current->nodeId == origin){
@@ -154,7 +157,7 @@ class Node{
         }
     }
 
-    static bool set_check(int target, int lower, int upper, int left, int right){
+    static bool set_check(int target, int lower, int upper, int left, int right){ // function to check if target in set 
         // left right exclusive 0 / inclusive 1
         if (lower == upper){
             if (left ==0 || right==0){
@@ -205,8 +208,7 @@ class Node{
         return false; 
     }
 
-    //TODO: implement DHT lookup
-	int find(int key){
+	int find(int key){ // find the value of a key using node 
         Node* next = find_successor(key);
 
         if(next->key_vals.find(key) == next->key_vals.end()){ // key does not exist
@@ -221,7 +223,7 @@ class Node{
         else{
             cout << "Lookup result of key " << key << " from node " << nodeId << " with path [" << nodeId << ", " << next->nodeId << "] value is "; 
         }
-        if(value==-1){
+        if(value==-1){ // print none if value is -1
             cout << "None" <<endl; 
         }
         else{
@@ -230,10 +232,10 @@ class Node{
         return value;
     }
 
-    void migrate_keys(){
+    void migrate_keys(){ // migrate keys from successor to newly joined node
         map<int, int>::iterator itr;
 
-        if(successor->key_vals.empty()){
+        if(successor->key_vals.empty()){ // no keys to migrate
             return; 
         }
          
@@ -241,26 +243,42 @@ class Node{
 
             bool in_range = set_check(itr->first, predecessor->nodeId, nodeId, 0,1); 
             if(in_range){
-                key_vals.insert(pair<int, int>(itr->first, itr->second));
+                key_vals.insert(pair<int, int>(itr->first, itr->second)); // insert keys into new node 
                 cout << "Migrate key " << itr->first << " from node " << successor->nodeId << " to node " << nodeId << endl;
             }
         }
 
         for( int i = predecessor->nodeId + 1; i <=nodeId; i++){
-            successor->key_vals.erase(i); 
+            successor->key_vals.erase(i); // remove keys from successor
         }
 
         return; 
 
     }
 
-	void insert(int key, int value){
+    void leave_migrate_keys(){ // add keys tro successor if node leaves
+        map<int, int>::iterator itr;
+
+        if(key_vals.empty()){ // no keys to migrate
+            return; 
+        }
+         
+        for (itr = key_vals.begin(); itr != key_vals.end(); ++itr) {
+            
+            successor->key_vals.insert(pair<int, int>(itr->first, itr->second)); // add key vals to successor
+            cout << "Leave: Migrate key " << itr->first << " from node " << nodeId << " to node " << successor->nodeId << endl;
+            
+        }
+        return; 
+    }
+
+	void insert(int key, int value){ // insert key value pair in correct successor 
         Node* next = find_successor(key); 
         next->key_vals.insert(pair<int, int>(key, value));
         return; 
     }
 
-	void remove(int key){
+	void remove(int key){ // remove key value pair from correct successor
         Node* next = find_successor(key); 
         next->key_vals.erase(key); 
         return; 
@@ -294,7 +312,7 @@ class Node{
 
 }; 
 
-void FingerTable::print(){
+void FingerTable::print(){ // print finger tables
     for(int i = 1; i < FINGERTABLESIZE; i++){
         int dist = pow(2, i-1);
         int div = pow(2, MBITS);
@@ -307,28 +325,28 @@ void FingerTable::print(){
 
 int main(){
 
-    Node n0(0);
+    Node n0(0); // create nodes for Chord
     Node n1(30);
     Node n2(65); 
     Node n3(110);
     Node n4(160);
     Node n5(230); 
 
-    n0.join();
+    n0.join(); // add nodes to the chord network 
     n1.join(&n0);
     n2.join(&n1);
     n3.join(&n2);
     n4.join(&n3);
     n5.join(&n4);
 
-    n0.printFT();
-    n1.printFT();
+    n0.printFT(); // print the fingertables of all nodes
+    n1.printFT(); // print after all joins for up to date tables
     n2.printFT();
     n3.printFT();
     n4.printFT();
     n5.printFT();
 
-    n0.insert(3,3); 
+    n0.insert(3,3); // insert key,value pairs into the chord network 
     n1.insert(200,None); 
     n2.insert(123,None);
     n3.insert(45,3);
@@ -343,7 +361,7 @@ int main(){
 
     cout << "\n"; 
 
-    n0.printMap();
+    n0.printMap(); // print all key value pairs 
     n1.printMap();
     n2.printMap();
     n3.printMap();
@@ -352,23 +370,42 @@ int main(){
 
     cout << "\n"; 
 
-    Node n6(100); 
+    Node n6(100); // join a new node with id 100 
     n6.join(&n5); 
 
-    cout <<"\n-------------------- Node 0 --------------------" << endl;  
-    for(int i = 0; i < 256; i++){
-        n0.find(i); 
+    int check[12] = {3,200,123,45,99,60,50,100,101,102,240,250}; // print lookups for nodes 0,65,110
+    cout <<"\n-------------------- Node 0 --------------------" << endl; 
+    for(int i = 0; i < 12; i ++){
+        n0.find(check[i]);
     }
 
-    cout <<"\n-------------------- Node 65 --------------------" << endl;  
-    for(int i = 0; i < 256; i++){
-        n2.find(i); 
+    cout <<"\n-------------------- Node 65 --------------------" << endl; 
+    for(int i = 0; i < 12; i ++){
+        n2.find(check[i]);
     }
 
-    cout <<"\n-------------------- Node 100 --------------------" << endl;  
-    for(int i = 0; i < 256; i++){
-        n6.find(i); 
+    cout <<"\n-------------------- Node 110 --------------------" << endl; 
+    for(int i = 0; i < 12; i ++){
+        n6.find(check[i]);
     }
+
+    cout << "\n";
+    
+    cout <<"\n-------------------- LEAVE OPERATION --------------------" << endl; 
+
+    n2.leave(); // remove n2 from the network 
+    cout << "\n";
+
+    n0.printFT(); 
+    n1.printFT(); 
+    cout << "\n";
+
+    n0.printMap(); // print updated maps afret n2 leaves the network 
+    n1.printMap();
+    n6.printMap();
+    n3.printMap();
+    n4.printMap();
+    n5.printMap();
 
     return 0;
 }

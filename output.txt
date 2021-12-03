@@ -101,42 +101,90 @@ Migrate key 100 from node 110 to node 100
 
 -------------------- Node 0 --------------------
 Lookup result of key 3 from node 0 with path [0, 30] value is 3
+Lookup result of key 200 from node 0 with path [0, 230] value is None
+Lookup result of key 123 from node 0 with path [0, 160] value is None
 Lookup result of key 45 from node 0 with path [0, 65] value is 3
-Lookup result of key 50 from node 0 with path [0, 65] value is 8
-Lookup result of key 60 from node 0 with path [0, 65] value is 10
 Lookup result of key 99 from node 0 with path [0, 100] value is None
+Lookup result of key 60 from node 0 with path [0, 65] value is 10
+Lookup result of key 50 from node 0 with path [0, 65] value is 8
 Lookup result of key 100 from node 0 with path [0, 100] value is 5
 Lookup result of key 101 from node 0 with path [0, 110] value is 4
 Lookup result of key 102 from node 0 with path [0, 110] value is 6
-Lookup result of key 123 from node 0 with path [0, 160] value is None
-Lookup result of key 200 from node 0 with path [0, 230] value is None
 Lookup result of key 240 from node 0 with path [0] value is 8
 Lookup result of key 250 from node 0 with path [0] value is 10
 
 -------------------- Node 65 --------------------
 Lookup result of key 3 from node 65 with path [65, 30] value is 3
+Lookup result of key 200 from node 65 with path [65, 230] value is None
+Lookup result of key 123 from node 65 with path [65, 160] value is None
 Lookup result of key 45 from node 65 with path [65] value is 3
-Lookup result of key 50 from node 65 with path [65] value is 8
-Lookup result of key 60 from node 65 with path [65] value is 10
 Lookup result of key 99 from node 65 with path [65, 100] value is None
+Lookup result of key 60 from node 65 with path [65] value is 10
+Lookup result of key 50 from node 65 with path [65] value is 8
 Lookup result of key 100 from node 65 with path [65, 100] value is 5
 Lookup result of key 101 from node 65 with path [65, 110] value is 4
 Lookup result of key 102 from node 65 with path [65, 110] value is 6
-Lookup result of key 123 from node 65 with path [65, 160] value is None
-Lookup result of key 200 from node 65 with path [65, 230] value is None
 Lookup result of key 240 from node 65 with path [65, 0] value is 8
 Lookup result of key 250 from node 65 with path [65, 0] value is 10
 
--------------------- Node 100 --------------------
+-------------------- Node 110 --------------------
 Lookup result of key 3 from node 100 with path [100, 30] value is 3
+Lookup result of key 200 from node 100 with path [100, 230] value is None
+Lookup result of key 123 from node 100 with path [100, 160] value is None
 Lookup result of key 45 from node 100 with path [100, 65] value is 3
-Lookup result of key 50 from node 100 with path [100, 65] value is 8
-Lookup result of key 60 from node 100 with path [100, 65] value is 10
 Lookup result of key 99 from node 100 with path [100] value is None
+Lookup result of key 60 from node 100 with path [100, 65] value is 10
+Lookup result of key 50 from node 100 with path [100, 65] value is 8
 Lookup result of key 100 from node 100 with path [100] value is 5
 Lookup result of key 101 from node 100 with path [100, 110] value is 4
 Lookup result of key 102 from node 100 with path [100, 110] value is 6
-Lookup result of key 123 from node 100 with path [100, 160] value is None
-Lookup result of key 200 from node 100 with path [100, 230] value is None
 Lookup result of key 240 from node 100 with path [100, 0] value is 8
 Lookup result of key 250 from node 100 with path [100, 0] value is 10
+
+
+-------------------- LEAVE OPERATION --------------------
+Leave: Migrate key 45 from node 65 to node 100
+Leave: Migrate key 50 from node 65 to node 100
+Leave: Migrate key 60 from node 65 to node 100
+
+---------- Node ID: 0 ----------
+Sucessor: 30
+Predecessor: 230
+
+| k = 1 [1, 2)   succ. = 30 |
+| k = 2 [2, 4)   succ. = 30 |
+| k = 3 [4, 8)   succ. = 30 |
+| k = 4 [8, 16)   succ. = 30 |
+| k = 5 [16, 32)   succ. = 30 |
+| k = 6 [32, 64)   succ. = 100 |
+| k = 7 [64, 128)   succ. = 100 |
+| k = 8 [128, 0)   succ. = 160 |
+-------------------------------
+*******************************
+---------- Node ID: 30 ----------
+Sucessor: 100
+Predecessor: 0
+
+| k = 1 [31, 32)   succ. = 100 |
+| k = 2 [32, 34)   succ. = 100 |
+| k = 3 [34, 38)   succ. = 100 |
+| k = 4 [38, 46)   succ. = 100 |
+| k = 5 [46, 62)   succ. = 100 |
+| k = 6 [62, 94)   succ. = 100 |
+| k = 7 [94, 158)   succ. = 100 |
+| k = 8 [158, 30)   succ. = 160 |
+-------------------------------
+*******************************
+
+---------- Node ID: 0 ----------
+{ (240: 8) (250: 10) }
+---------- Node ID: 30 ----------
+{ (3: 3) }
+---------- Node ID: 100 ----------
+{ (45: 3) (50: 8) (60: 10) (99: None) (100: 5) }
+---------- Node ID: 110 ----------
+{ (101: 4) (102: 6) }
+---------- Node ID: 160 ----------
+{ (123: None) }
+---------- Node ID: 230 ----------
+{ (200: None) }
