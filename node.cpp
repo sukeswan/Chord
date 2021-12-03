@@ -52,8 +52,8 @@ class Node{
     void join(Node* prime){
         init_finger_table(prime); 
         printFT();
-        return; // this is for testing only 
-        //update_others();
+        //return; // this is for testing only 
+        update_others();
         // move keys in (predecessor,n] from successor 
         printFT(); 
         return; 
@@ -80,7 +80,7 @@ class Node{
         }
 
         Node* prime = find_predecessor(id); 
-        cout << "prime " << prime->nodeId << "primesucc " << prime->successor->nodeId << endl; 
+        cout << "prime " << prime->nodeId << " primesucc " << prime->successor->nodeId << endl; 
         return prime->successor; 
     }
 
@@ -94,7 +94,7 @@ class Node{
             return prime; 
         }
         cout << "while" << endl; 
-        while (!set_check(id,lower,upper,0,1)){
+        while (!set_check(id,lower,upper,1,1)){
             prime = prime->closest_preceding_finger(id);
         }
         //cout << "HOLA" << endl;
@@ -105,7 +105,7 @@ class Node{
 
         for(int i = MBITS; i>0; i--){
             int currentId = table.succNodes[i]->nodeId;
-            bool in_range = set_check(currentId,nodeId, id, 0,0); 
+            bool in_range = set_check(currentId,nodeId, id, 1,1); 
             if(in_range){
                 return table.succNodes[i]; 
             }
@@ -128,11 +128,11 @@ class Node{
         predecessor->table.succNodes[1] = this; 
         //cout<< "pred " << predecessor->nodeId << endl; 
         //cout<< "succpred " << successor->predecessor->nodeId << endl; 
-
+        cout << "init" << endl; 
         for(int i = 1; i < MBITS; i++){
             int currentId = table.start[i+1]; 
             //cout << "currentId " << currentId << endl; 
-            
+            cout<< "currentID " << currentId << " nodeId " << nodeId << " table.succNodes[i]->nodeId " << table.succNodes[i]->nodeId<< endl; 
             bool in_range = set_check(currentId, nodeId, table.succNodes[i]->nodeId, 1,0);
 
             if(in_range){ 
@@ -164,7 +164,7 @@ class Node{
         bool in_range = set_check(s->nodeId,nodeId,table.succNodes[i]->nodeId,1,0); 
 
         if(in_range){
-            table.succNodes[i] = s; 
+            table.succNodes[i] = s;
             Node* p = predecessor; 
             p->update_finger_table(s,i); 
         }
@@ -354,19 +354,19 @@ void test_join(){
 
 int main(){
     Node n0(0);
-    Node n1(30);
-    Node n2(65);
+    Node n1(250);
+    Node n2(60);
 
     n0.join();
     n1.join(&n0);
     
-    n2.join(&n1);
+    //n2.join(&n1);
 
     cout << "____________________FINAL ____________________" << endl; 
 
     n0.printFT();
     n1.printFT(); 
-    n2.printFT();
+    //n2.printFT();
 
     return 0;
 }
