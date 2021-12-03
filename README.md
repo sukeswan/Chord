@@ -3,7 +3,7 @@ CSE250A Computer Networks Final Project
 
 Authors
 Surya Keswani, sukeswan@ucsc.edu
-Donald Stweart, dolstewa@ucsc.edu
+Donald Stewart, dolstewa@ucsc.edu
 
 
 This project implemnts the Chord protocol, was seen in the `chord.pdf` file. 
