@@ -48,6 +48,7 @@ class Node{
         nodeId = id; 
         table = FingerTable(nodeId);
     }
+    
     void join(){ // this join is for the initial chord node joining the network 
         
         predecessor = this; // node point to itself 
@@ -118,8 +119,6 @@ class Node{
         successor->predecessor = this;
         predecessor->successor = this; 
 
-        //cout << this->nodeId << " has predecessor " << predecessor->nodeId << endl; 
-        //cout << this->nodeId << " has successor " << successor->nodeId << endl; 
         for(int row = 2; row < FINGERTABLESIZE; row++){
             if(set_check(table.start[row],nodeId,successor->nodeId,0,1)){
                 table.succNodes[row] = successor; 
@@ -141,6 +140,7 @@ class Node{
             return;
         }
         else{
+         
             for(int row = 1; row < FINGERTABLESIZE; row++){
                 current->table.succNodes[row] = find_successor(current->table.start[row]);
             }
