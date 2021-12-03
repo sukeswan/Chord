@@ -82,3 +82,61 @@ Predecessor: 160
 | k = 8 [102, 230)   succ. = 110 |
 -------------------------------
 *******************************
+
+---------- Node ID: 0 ----------
+{ (240: 8) (250: 10) }
+---------- Node ID: 30 ----------
+{ (3: 3) }
+---------- Node ID: 65 ----------
+{ (45: 3) (50: 8) (60: 10) }
+---------- Node ID: 110 ----------
+{ (99: None) (100: 5) (101: 4) (102: 6) }
+---------- Node ID: 160 ----------
+{ (123: None) }
+---------- Node ID: 230 ----------
+{ (200: None) }
+
+Migrate key 99 from node 110 to node 100
+Migrate key 100 from node 110 to node 100
+
+-------------------- Node 0 --------------------
+Lookup result of key 3 from node 0 with path [0, 30] value is 3
+Lookup result of key 45 from node 0 with path [0, 65] value is 3
+Lookup result of key 50 from node 0 with path [0, 65] value is 8
+Lookup result of key 60 from node 0 with path [0, 65] value is 10
+Lookup result of key 99 from node 0 with path [0, 100] value is None
+Lookup result of key 100 from node 0 with path [0, 100] value is 5
+Lookup result of key 101 from node 0 with path [0, 110] value is 4
+Lookup result of key 102 from node 0 with path [0, 110] value is 6
+Lookup result of key 123 from node 0 with path [0, 160] value is None
+Lookup result of key 200 from node 0 with path [0, 230] value is None
+Lookup result of key 240 from node 0 with path [0] value is 8
+Lookup result of key 250 from node 0 with path [0] value is 10
+
+-------------------- Node 65 --------------------
+Lookup result of key 3 from node 65 with path [65, 30] value is 3
+Lookup result of key 45 from node 65 with path [65] value is 3
+Lookup result of key 50 from node 65 with path [65] value is 8
+Lookup result of key 60 from node 65 with path [65] value is 10
+Lookup result of key 99 from node 65 with path [65, 100] value is None
+Lookup result of key 100 from node 65 with path [65, 100] value is 5
+Lookup result of key 101 from node 65 with path [65, 110] value is 4
+Lookup result of key 102 from node 65 with path [65, 110] value is 6
+Lookup result of key 123 from node 65 with path [65, 160] value is None
+Lookup result of key 200 from node 65 with path [65, 230] value is None
+Lookup result of key 240 from node 65 with path [65, 0] value is 8
+Lookup result of key 250 from node 65 with path [65, 0] value is 10
+
+-------------------- Node 100 --------------------
+Lookup result of key 3 from node 100 with path [100, 30] value is 3
+Lookup result of key 45 from node 100 with path [100, 65] value is 3
+Lookup result of key 50 from node 100 with path [100, 65] value is 8
+Lookup result of key 60 from node 100 with path [100, 65] value is 10
+Lookup result of key 99 from node 100 with path [100] value is None
+Lookup result of key 100 from node 100 with path [100] value is 5
+Lookup result of key 101 from node 100 with path [100, 110] value is 4
+Lookup result of key 102 from node 100 with path [100, 110] value is 6
+Lookup result of key 123 from node 100 with path [100, 160] value is None
+Lookup result of key 200 from node 100 with path [100, 230] value is None
+Lookup result of key 240 from node 100 with path [100, 0] value is 8
+Lookup result of key 250 from node 100 with path [100, 0] value is 10

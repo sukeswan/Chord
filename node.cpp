@@ -207,7 +207,27 @@ class Node{
 
     //TODO: implement DHT lookup
 	int find(int key){
-        return -1; 
+        Node* next = find_successor(key);
+
+        if(next->key_vals.find(key) == next->key_vals.end()){ // key does not exist
+            return -1; 
+        }
+
+        int value = next->key_vals.find(key)->second; 
+
+        if(next->nodeId == nodeId){
+            cout << "Lookup result of key " << key  << " from node " << nodeId << " with path [" << nodeId  << "] value is ";
+        }
+        else{
+            cout << "Lookup result of key " << key << " from node " << nodeId << " with path [" << nodeId << ", " << next->nodeId << "] value is "; 
+        }
+        if(value==-1){
+            cout << "None" <<endl; 
+        }
+        else{
+            cout << value <<endl; 
+        }
+        return value;
     }
 
     void migrate_keys(){
@@ -231,7 +251,6 @@ class Node{
         }
 
         return; 
-
 
     }
 
@@ -286,7 +305,8 @@ void FingerTable::print(){
 
 }
 
-void test_join(){
+int main(){
+
     Node n0(0);
     Node n1(30);
     Node n2(65); 
@@ -307,28 +327,48 @@ void test_join(){
     n3.printFT();
     n4.printFT();
     n5.printFT();
-}
 
-int main(){
+    n0.insert(3,3); 
+    n1.insert(200,None); 
+    n2.insert(123,None);
+    n3.insert(45,3);
+    n4.insert(99,None);
+    n2.insert(60,10);
+    n0.insert(50,8);
+    n3.insert(100,5);
+    n3.insert(101,4);
+    n3.insert(102,6);
+    n5.insert(240,8);
+    n5.insert(250,10);
 
-    Node n0(0);
-    Node n1(100);
-    Node n2(50); 
-
-    n0.join();
-    n1.join(&n0);
-
-    n1.insert(31,None);
-    n1.insert(32,None);
-    n1.insert(33,None);
-    n1.insert(49,None);
-    n1.insert(50,None);
-
-    n2.join(&n1); 
+    cout << "\n"; 
 
     n0.printMap();
     n1.printMap();
     n2.printMap();
+    n3.printMap();
+    n4.printMap();
+    n5.printMap();
+
+    cout << "\n"; 
+
+    Node n6(100); 
+    n6.join(&n5); 
+
+    cout <<"\n-------------------- Node 0 --------------------" << endl;  
+    for(int i = 0; i < 256; i++){
+        n0.find(i); 
+    }
+
+    cout <<"\n-------------------- Node 65 --------------------" << endl;  
+    for(int i = 0; i < 256; i++){
+        n2.find(i); 
+    }
+
+    cout <<"\n-------------------- Node 100 --------------------" << endl;  
+    for(int i = 0; i < 256; i++){
+        n6.find(i); 
+    }
 
     return 0;
 }
